@@ -49,7 +49,8 @@ export default function Index() {
         id: item.id,
         heading: item.name,
         data: [item.currencySettings.baseCurrency.currencyCode],
-        badges: [{content: item.status[0] + item.status.slice(1).toLowerCase(), tone: `${item.status === 'ACTIVE' ? 'success' : 'critical'}`}]
+        badges: [{content: item.status[0] + item.status.slice(1).toLowerCase(), tone: `${item.status === 'ACTIVE' ? 'success' : 'critical'}`}],
+        selected: item.id == "gid://shopify/Market/24250876001" ? true : false
       };
     });
     const selected = await shopify.picker({
