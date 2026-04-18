@@ -12,6 +12,14 @@ export const loader = async ({ request }) => {
           id
           name
           status
+          regions(first: 50) {
+            nodes {
+              ... on MarketRegionCountry {
+                code  
+                name
+              }
+            }
+          }
            currencySettings {
             baseCurrency {
               currencyCode
@@ -99,8 +107,8 @@ export default function Index() {
       items,
     });
 
-    const isoCodes = loader.data.filter(country => selected.selected.includes(country.id)).map(country => country.currencySettings.baseCurrency.currencyCode);
-    if(isoCodes.length) setSelectedCountry(isoCodes)
+    const isoCodes = loader.data.filter(country => selected.selected.includes(country.id)).map(country => country?.regions?.nodes[0]?.code ?? '');
+    if(isoCodes.length) setSelectedCountry(isoCodes);
   };
 
   return (
@@ -147,7 +155,7 @@ export default function Index() {
                   <s-grid-item>
                     <s-text-field
                       label="Payment Options"
-                      value="Cash On Delivery"
+                      value="Cash on Delivery (COD)"
                       name="payment-list"
                       readOnly
                     ></s-text-field>

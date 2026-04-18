@@ -18,16 +18,28 @@ const NO_CHANGES = {
  */
 export function cartPaymentMethodsTransformRun(input) {
   const configuration = JSON.parse(
-    input?.paymentCustomization?.metafield?.value ?? "{}"
+    input?.paymentCustomization?.metafield?.value ?? "{}",
   );
+  const isoCodes = configuration.isoCodes?.split(",") ?? [];
+  if (!isoCodes.includes(input.localization.country.isoCode)) {
+    const paymentId = input.paymentMethods.find((method) =>
+      method.name
+        .toLowerCase()
+        .includes(configuration.paymentList.toLowerCase()),
+    )?.id;
 
-  return {
-    operations: [
-      {
-        show
-      }
-    ]
+    if (paymentId) {
+      return {
+        operations: [
+          {
+            paymentMethodHide: {
+              paymentMethodId: paymentId,
+            },
+          },
+        ],
+      };
+    }
   }
 
   return NO_CHANGES;
-};
+}

@@ -4,4 +4,14 @@ query CartPaymentMethodsTransformRunInput {
       value
     }
   }
+  localization {
+    country {
+      isoCode
+    }
+  }
+
+  paymentMethods {
+    id
+    name
+  }
 }
