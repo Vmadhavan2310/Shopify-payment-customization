@@ -1,5 +1,5 @@
 import { useAppBridge } from "@shopify/app-bridge-react";
-import { useEffect } from "react";
+import { useState } from "react";
 import { useFetcher, useLoaderData } from "react-router";
 import { authenticate } from "~/shopify.server";
 
@@ -31,17 +31,53 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  await authenticate.admin(request);
+  const {admin} = await authenticate.admin(request);
   const formData = await request.formData();
-  console.log(formData.get("country"), formData.get("payment-list"));
+  const resp = await admin.graphql(
+    `
+    mutation paymentCustomise($input: PaymentCustomizationInput!) {
+      paymentCustomizationCreate(paymentCustomization: $input) {
+        paymentCustomization {
+          id
+        }
+        userErrors {
+          message
+        }
+      }
+    }
+  `,
+    {
+      variables: {
+        input: {
+          functionHandle: "payment-customization",
+          title: "COD Payment",
+          enabled: true,
+          metafields: [
+            {
+              namespace: "$app:payment-customization",
+              key: "payment-configuration",
+              type: "json",
+              value: JSON.stringify({
+                isoCodes: formData.get('selectedIso'),
+                paymentList: formData.get('payment-list')
+              }),
+            },
+          ],
+        },
+      },
+    },
+  );
+  const data = await resp.json();
+  return {
+    data
+  }
 };
 
 export default function Index() {
   const fetcher = useFetcher();
   const loader = useLoaderData();
   const shopify = useAppBridge();
-
-  console.log(loader);
+  const [selectedCoutries, setSelectedCountry] = useState([]);
 
   const marketPicker = async () => {
     const items = loader.data.map((item) => {
@@ -62,7 +98,9 @@ export default function Index() {
       ],
       items,
     });
-    console.log(selected)
+
+    const isoCodes = loader.data.filter(country => selected.selected.includes(country.id)).map(country => country.currencySettings.baseCurrency.currencyCode);
+    if(isoCodes.length) setSelectedCountry(isoCodes)
   };
 
   return (
@@ -76,8 +114,8 @@ export default function Index() {
           <s-stack padding="large large-500">
             <fetcher.Form
               method="POST"
-              onSubmit={() => fetcher.submit({}, { method: "GET" })}
             >
+              <input type="hidden" value={selectedCoutries} name="selectedIso"></input>
               <s-stack direction="block" gap="large-500">
                 <s-grid gridTemplateColumns="repeat(2,1fr)" gap="base">
                   <s-grid-item>
@@ -109,7 +147,7 @@ export default function Index() {
                   <s-grid-item>
                     <s-text-field
                       label="Payment Options"
-                      value="Cash On Delivery (COD)"
+                      value="Cash On Delivery"
                       name="payment-list"
                       readOnly
                     ></s-text-field>

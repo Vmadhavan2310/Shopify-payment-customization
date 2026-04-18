@@ -1,6 +1,6 @@
 query CartPaymentMethodsTransformRunInput {
   paymentCustomization {
-    metafield(namespace: "$app:payment-customization", key: "function-configuration") {
+    metafield(namespace: "$app:payment-customization", key: "payment-configuration") {
       value
     }
   }
