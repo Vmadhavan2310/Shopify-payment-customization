@@ -1,36 +1,13 @@
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { useState } from "react";
-import { useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useLoaderData, Form } from "react-router";
 import { authenticate } from "~/shopify.server";
+import { MARKETS } from '../graphql/markets';
+import { PAYMENT_CUSTOMIZATION_CREATE } from '../graphql/PaymentCreate';
 
 export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
-  const response = await admin.graphql(
-    `query {
-      markets(first: 100) {
-        nodes {
-          id
-          name
-          status
-          regions(first: 50) {
-            nodes {
-              ... on MarketRegionCountry {
-                code  
-                name
-              }
-            }
-          }
-           currencySettings {
-            baseCurrency {
-              currencyCode
-              enabled
-            }
-          }
-        }
-      }
-    }
-    `,
-  );
+  const response = await admin.graphql(MARKETS);
 
   const markets = await response.json();
   return {
@@ -42,18 +19,7 @@ export const action = async ({ request }) => {
   const {admin} = await authenticate.admin(request);
   const formData = await request.formData();
   const resp = await admin.graphql(
-    `
-    mutation paymentCustomise($input: PaymentCustomizationInput!) {
-      paymentCustomizationCreate(paymentCustomization: $input) {
-        paymentCustomization {
-          id
-        }
-        userErrors {
-          message
-        }
-      }
-    }
-  `,
+    PAYMENT_CUSTOMIZATION_CREATE,
     {
       variables: {
         input: {
@@ -92,9 +58,9 @@ export default function Index() {
       return {
         id: item.id,
         heading: item.name,
-        data: [item.currencySettings.baseCurrency.currencyCode],
+        data: [item.currencySettings?.baseCurrency?.currencyCode ?? ''],
         badges: [{content: item.status[0] + item.status.slice(1).toLowerCase(), tone: `${item.status === 'ACTIVE' ? 'success' : 'critical'}`}],
-        selected: item.id == "gid://shopify/Market/24250876001" ? true : false
+        selected: false
       };
     });
     const selected = await shopify.picker({
