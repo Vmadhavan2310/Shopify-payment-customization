@@ -10,6 +10,19 @@ query CartPaymentMethodsTransformRunInput {
     }
   }
 
+  cart {
+    cost {
+      subtotalAmount {
+        amount
+        currencyCode
+      }
+      totalAmount {
+        amount
+        currencyCode
+      }
+    }
+  }
+
   paymentMethods {
     id
     name
