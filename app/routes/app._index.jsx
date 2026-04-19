@@ -1,22 +1,29 @@
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { useState } from "react";
-import { useFetcher, useLoaderData, Form } from "react-router";
+import { redirect, useFetcher, useLoaderData } from "react-router";
 import { authenticate } from "~/shopify.server";
 import { MARKETS } from '../graphql/markets';
 import { PAYMENT_CUSTOMIZATION_CREATE } from '../graphql/PaymentCreate';
+import db from '../db.server';
 
 export const loader = async ({ request }) => {
-  const { admin } = await authenticate.admin(request);
+  const { admin, session } = await authenticate.admin(request);
   const response = await admin.graphql(MARKETS);
-
   const markets = await response.json();
-  return {
+  const dbData = await db.paymentCustomization.findFirst({
+    where: {
+      shop: session.shop,
+    },
+  })
+
+console.log(dbData, 'dbdata')  
+return {
     data: markets.data.markets.nodes,
   };
 };
 
 export const action = async ({ request }) => {
-  const {admin} = await authenticate.admin(request);
+  const { admin, session } = await authenticate.admin(request);
   const formData = await request.formData();
   const resp = await admin.graphql(
     PAYMENT_CUSTOMIZATION_CREATE,
@@ -42,6 +49,16 @@ export const action = async ({ request }) => {
     },
   );
   const data = await resp.json();
+   if (data?.data?.paymentCustomizationCreate?.paymentCustomization?.id) {
+    await db.paymentCustomization.create({
+      data: {
+        shopifyId: data.data.paymentCustomizationCreate.paymentCustomization.id,
+        shop: session.shop,
+        isoCodes: formData.get('selectedIso'),
+        paymentMethod: formData.get('payment-list'),
+      },
+    });
+  }
   return {
     data
   }

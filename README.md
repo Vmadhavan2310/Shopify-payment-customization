@@ -235,3 +235,36 @@ Shopify:
 Internationalization:
 
 - [Internationalizing your app](https://shopify.dev/docs/apps/best-practices/internationalization/getting-started)
+ ## npx prisma migrate dev --name <migration_name> command for psrima
+ - Change the url and provider in schema.prisma
+ - add a model if you want
+ - run the above command to create a table
+ - use the below to connect with the update
+
+ ```shell
+// CREATE
+await db.paymentCustomization.create({
+  data: { shopifyId: "123", shop: "example.myshopify.com" }
+});
+
+// READ
+const config = await db.paymentCustomization.findUnique({
+  where: { shopifyId: "123" }
+});
+
+// UPDATE
+await db.paymentCustomization.update({
+  where: { id: "abc123" },
+  data: { enabled: false }
+});
+
+// DELETE
+await db.paymentCustomization.delete({
+  where: { id: "abc123" }
+});
+
+// READ ALL for a shop
+const configs = await db.paymentCustomization.findMany({
+  where: { shop: "example.myshopify.com" }
+});
+ ```
