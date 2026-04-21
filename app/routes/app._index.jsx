@@ -1,5 +1,5 @@
 import { useAppBridge } from "@shopify/app-bridge-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { redirect, useFetcher, useLoaderData } from "react-router";
 import { authenticate } from "~/shopify.server";
 import { MARKETS } from '../graphql/markets';
@@ -93,7 +93,12 @@ export default function Index() {
     const isoCodes = loader.data.filter(country => selected.selected.includes(country.id)).map(country => country?.regions?.nodes[0]?.code ?? '');
     if(isoCodes.length) setSelectedCountry(isoCodes);
   };
+console.log(fetcher)  
 
+useEffect(()=> {
+  if(fetcher?.data?.data?.data?.paymentCustomizationCreate.userErrors.length) shopify.toast.show('Failed')
+    else if(fetcher?.data?.data?.data?.paymentCustomizationCreate.paymentCustomization?.id) shopify.toast.show('Saved')
+},[fetcher.data])
   return (
     <>
       <s-page heading="Payment Customization">
@@ -105,6 +110,7 @@ export default function Index() {
           <s-stack padding="large large-500">
             <fetcher.Form
               method="POST"
+              onSubmit={()=> {console.log(fetcher)}}
             >
               <input type="hidden" value={selectedCoutries} name="selectedIso"></input>
               <s-stack direction="block" gap="large-500">
@@ -146,7 +152,7 @@ export default function Index() {
                 </s-grid>
                 <s-stack direction="inline" gap="base" justifyContent="end">
                   <s-button>Discard</s-button>
-                  <s-button variant="primary" type="submit">
+                  <s-button variant="primary" type="submit" disabled={!selectedCoutries.length} loading={fetcher.state == 'submitting'}>
                     Save
                   </s-button>
                 </s-stack>
